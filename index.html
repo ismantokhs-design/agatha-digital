@@ -216,7 +216,7 @@
             <!-- Logo Header Sidebar -->
             <div class="px-4 py-3.5 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
                 <div class="flex items-center gap-3 overflow-hidden">
-                    <img id="sidebar-logo-img" src="assets/icons/Logo.png" alt="Logo Agahta Digital" class="h-12 w-12 object-contain flex-shrink-0">
+                    <img id="sidebar-logo-img" src="assets/icons/logo.png" alt="" onerror="this.onerror=null;this.src='assets/icons/logo.png';" class="h-12 w-12 object-contain flex-shrink-0">
                     <div class="flex flex-col truncate">
                         <span class="font-extrabold text-stone-900 dark:text-stone-100 text-sm leading-tight truncate" id="sidebar-company-title">Agahta Digital</span>
                     </div>
@@ -311,7 +311,7 @@
                 </button>
 
                 <a href="#/" data-link class="flex items-center gap-2 min-w-0">
-                    <img id="global-public-logo" src="assets/icons/Logo.png" alt="Logo Agahta Digital" class="h-8 w-8 object-contain flex-shrink-0">
+                    <img id="global-public-logo" src="assets/icons/logo.png" alt="" onerror="this.onerror=null;this.src='assets/icons/logo.png';" class="h-8 w-8 object-contain flex-shrink-0">
                     <span id="global-public-brand" class="text-sm font-bold text-[#4a5a3f] dark:text-emerald-400 truncate">Agahta Digital</span>
                 </a>
 
@@ -428,13 +428,13 @@
                 <!-- Logo Mobile (Kotak Siku Ramping) -->
                 <div class="flex items-center md:hidden flex-shrink-0">
                     <span class="w-8 h-8 border border-stone-200 dark:border-stone-800 bg-[#f6f3ec] dark:bg-stone-950 rounded-none flex items-center justify-center overflow-hidden">
-                        <img id="mobile-logo-img" src="assets/icons/Logo.png" alt="Logo Agahta Digital" class="w-6 h-6 object-contain">
+                        <img id="mobile-logo-img" src="assets/icons/logo.png" alt="" onerror="this.onerror=null;this.src='assets/icons/logo.png';" class="w-6 h-6 object-contain">
                     </span>
                 </div>
 
                 <!-- Info Aplikasi -->
                 <div class="flex items-center gap-3 min-w-0 flex-1">
-                    <img id="header-logo-img" src="assets/icons/icon-192.png" alt="Logo Agahta Digital" class="h-12 w-12 object-cover rounded-none border border-transparent hidden md:block flex-shrink-0">
+                    <img id="header-logo-img" src="assets/icons/icon-192.png" alt="" onerror="this.onerror=null;this.src='assets/icons/logo.png';" class="h-12 w-12 object-cover rounded-none border border-transparent hidden md:block flex-shrink-0">
 
                     <div class="flex flex-col justify-center min-w-0 flex-1">
                         <h2 class="text-xs md:text-sm font-bold text-stone-900 dark:text-stone-100 truncate leading-tight" id="header-company-name">Agahta Digital</h2>
@@ -697,9 +697,33 @@
         import { auth, db } from "./assets/js/firebase-init.js";
 
         const SIDEBAR_BRAND_NAME = "Agahta Digital";
+        const DEFAULT_LOGO_SRC = "assets/icons/logo.png";
         let latestRunningText = "Selamat datang di Agahta Digital.";
         let latestSpeed = "normal";
         let isAuthenticatedUser = false;
+
+        function isValidLogoSrc(val = "") {
+            const trimmed = String(val || "").trim();
+            if (!trimmed || trimmed === "null" || trimmed === "undefined") return false;
+            if (trimmed.startsWith("data:image/")) {
+                return trimmed.length <= 900000;
+            }
+            return (
+                trimmed.startsWith("https://") ||
+                trimmed.startsWith("http://") ||
+                trimmed.startsWith("assets/") ||
+                trimmed.startsWith("./") ||
+                trimmed.startsWith("/")
+            );
+        }
+
+        function attachLogoFallback(imgEl, fallbackSrc = DEFAULT_LOGO_SRC) {
+            if (!imgEl) return;
+            imgEl.onerror = () => {
+                imgEl.onerror = null;
+                imgEl.src = fallbackSrc;
+            };
+        }
 
         function formatBookingWaLink(rawPhone = "", brandName = "Agahta Digital") {
             let digits = String(rawPhone || "").replace(/\D/g, "");
@@ -753,7 +777,7 @@
                 let teleponPerusahaan = "";
                 let emailPerusahaan = "";
                 let iconUrl = "assets/icons/icon-192.png";
-                let mobileIconUrl = "assets/icons/Logo.png";
+                let mobileIconUrl = DEFAULT_LOGO_SRC;
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
@@ -762,16 +786,15 @@
                     teleponPerusahaan = String(data.telepon || data.telp || data.no_hp || data.hp || data.wa || "").trim();
                     emailPerusahaan = String(data.email || "").trim();
 
-                    if (data.iconUrl) {
-                        iconUrl = data.iconUrl;
-                        mobileIconUrl = data.iconUrl;
-                    } else if (data.logo) {
-                        iconUrl = data.logo;
-                        mobileIconUrl = data.logo;
+                    const candidateLogo = String(data.iconUrl || data.logo || "").trim();
+                    if (isValidLogoSrc(candidateLogo)) {
+                        iconUrl = candidateLogo;
+                        mobileIconUrl = candidateLogo;
                     }
                 }
 
                 const sidebarTitleEl = document.getElementById('sidebar-company-title');
+                const sidebarLogoEl = document.getElementById('sidebar-logo-img');
                 const headerCompanyNameEl = document.getElementById('header-company-name');
                 const headerAddressEl = document.getElementById('header-company-address');
                 const headerPhoneWrapEl = document.getElementById('header-company-phone-wrap');
@@ -822,17 +845,16 @@
 
                 if (copyrightEl) copyrightEl.textContent = `© 2026 ${SIDEBAR_BRAND_NAME}. All rights reserved.`;
 
-                if (mobileLogoEl && mobileIconUrl) {
-                    mobileLogoEl.src = mobileIconUrl;
-                }
-                if (pubLogoEl && mobileIconUrl) {
-                    pubLogoEl.src = mobileIconUrl;
-                }
+                attachLogoFallback(sidebarLogoEl, DEFAULT_LOGO_SRC);
+                attachLogoFallback(mobileLogoEl, DEFAULT_LOGO_SRC);
+                attachLogoFallback(pubLogoEl, DEFAULT_LOGO_SRC);
+                attachLogoFallback(headerLogoEl, DEFAULT_LOGO_SRC);
 
-                if (iconUrl) {
-                    if (headerLogoEl) headerLogoEl.src = iconUrl;
-                    if (appleIconEl) appleIconEl.href = iconUrl;
-                }
+                if (sidebarLogoEl) sidebarLogoEl.src = mobileIconUrl || DEFAULT_LOGO_SRC;
+                if (mobileLogoEl) mobileLogoEl.src = mobileIconUrl || DEFAULT_LOGO_SRC;
+                if (pubLogoEl) pubLogoEl.src = mobileIconUrl || DEFAULT_LOGO_SRC;
+                if (headerLogoEl) headerLogoEl.src = iconUrl || DEFAULT_LOGO_SRC;
+                if (appleIconEl) appleIconEl.href = iconUrl || DEFAULT_LOGO_SRC;
 
                 if (latestRunningText === "Selamat datang di Agahta Digital.") {
                     latestRunningText = `Selamat datang di ${namaPerusahaan}.`;

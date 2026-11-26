@@ -5,9 +5,9 @@ import { db, auth } from "../firebase-init.js";
 
 const DEFAULT_BRAND_NAME = "BUMKal Sinar Mitra Desa";
 const DEFAULT_WA_NUMBER = "6289602510491";
-const DEFAULT_IMG = "assets/icons/Logo.png";
+const DEFAULT_IMG = "assets/icons/logo.png";
 const PROFILE_CACHE_KEY = "bumkal_profil_cache_v1";
-const DESC_PREVIEW_LIMIT = 120;
+const DESC_PREVIEW_LIMIT = 95;
 
 function escapeHtml(value = "") {
     return String(value ?? "")
@@ -76,16 +76,16 @@ function buildWaOrderUrl(rawPhone, brandName, productName, priceLabel) {
 function buildDescriptionHtml(deskripsi = "", index = 0) {
     const clean = String(deskripsi || "").trim();
     if (!clean) {
-        return `<p class="text-xs text-stone-400 dark:text-stone-500 italic">Belum ada deskripsi produk.</p>`;
+        return `<p class="text-[11px] sm:text-xs text-stone-400 dark:text-stone-500 italic">Belum ada deskripsi produk.</p>`;
     }
 
     if (clean.length <= DESC_PREVIEW_LIMIT) {
-        return `<p class="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">${escapeHtml(clean)}</p>`;
+        return `<p class="text-[11px] sm:text-xs text-stone-600 dark:text-stone-400 leading-relaxed">${escapeHtml(clean)}</p>`;
     }
 
     const snippet = clean.slice(0, DESC_PREVIEW_LIMIT).trimEnd();
     return `
-        <p class="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
+        <p class="text-[11px] sm:text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
             ${escapeHtml(snippet)}
             <button
                 type="button"
@@ -160,8 +160,8 @@ export function renderProduk() {
     const brandName = escapeHtml(profile.nama);
 
     return `
-        <div class="max-w-5xl w-full mx-auto px-4 py-6 text-stone-800 dark:text-stone-100">
-            <div class="bg-[#faf8f3] dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-none p-4 sm:p-6 space-y-5">
+        <div class="max-w-5xl w-full mx-auto px-3 sm:px-4 py-4 sm:py-6 text-stone-800 dark:text-stone-100">
+            <div class="bg-[#faf8f3] dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-none p-3 sm:p-6 space-y-4 sm:space-y-5">
                 <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-stone-200 dark:border-stone-800 pb-4">
                     <div>
                         <div id="produk-brand-label" class="text-[11px] font-bold uppercase tracking-wider text-[#5c6d4e] dark:text-emerald-400">
@@ -210,8 +210,8 @@ export function renderProduk() {
                 <!-- Status Pesan -->
                 <div id="produk-status-box" class="hidden text-xs px-3 py-2.5 bg-[#f6f3ec] dark:bg-stone-950/60 border border-stone-200 dark:border-stone-800 rounded-none text-stone-700 dark:text-stone-200"></div>
 
-                <!-- Grid Daftar Produk -->
-                <div id="produk-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Grid Daftar Produk (2 Kolom Kanan-Kiri di HP, 3 Kolom di Desktop) -->
+                <div id="produk-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
                     <div class="col-span-full py-10 text-center text-xs text-stone-500 dark:text-stone-400">
                         Memuat data produk...
                     </div>
@@ -412,11 +412,11 @@ export function initProdukHandler() {
             const fallbackImgSafe = escapeHtml(DEFAULT_IMG);
             const priceText = formatRupiah(item.harga);
             const priceDisplay = item.satuan && item.harga > 0
-                ? `${escapeHtml(priceText)} <span class="text-[11px] font-normal text-stone-500 dark:text-stone-400">/ ${escapeHtml(item.satuan)}</span>`
+                ? `${escapeHtml(priceText)} <span class="text-[10px] sm:text-[11px] font-normal text-stone-500 dark:text-stone-400">/ ${escapeHtml(item.satuan)}</span>`
                 : escapeHtml(priceText);
 
             const stockBadge = item.stok !== null && item.stok !== undefined && String(item.stok).trim() !== ""
-                ? `<span class="text-[10px] font-semibold px-2 py-0.5 bg-[#f6f3ec] dark:bg-stone-950 border border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-300">Stok: ${escapeHtml(String(item.stok))}</span>`
+                ? `<span class="text-[9px] sm:text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 bg-[#f6f3ec] dark:bg-stone-950 border border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-300 flex-shrink-0">Stok: ${escapeHtml(String(item.stok))}</span>`
                 : "";
 
             const waUrl = escapeHtml(buildWaOrderUrl(activeProfile.telepon, activeProfile.nama, item.nama, priceText));
@@ -433,17 +433,17 @@ export function initProdukHandler() {
                             alt="${escapeHtml(item.nama)}"
                             loading="lazy"
                             onerror="this.onerror=null;this.src='${fallbackImgSafe}';"
-                            class="w-full h-40 object-cover bg-[#f6f3ec] dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800 transition duration-300 group-hover:scale-[1.02]"
+                            class="w-full h-28 sm:h-40 object-cover bg-[#f6f3ec] dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800 transition duration-300 group-hover:scale-[1.02]"
                         >
-                        <div class="p-3.5 space-y-2">
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-[#5c6d4e] dark:text-emerald-400">
+                        <div class="p-2.5 sm:p-3.5 space-y-1.5 sm:space-y-2">
+                            <div class="flex items-center justify-between gap-1.5 flex-wrap">
+                                <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#5c6d4e] dark:text-emerald-400 truncate">
                                     ${escapeHtml(item.kategori)}
                                 </span>
                                 ${stockBadge}
                             </div>
 
-                            <h2 class="text-sm font-bold text-stone-900 dark:text-stone-100 leading-snug">
+                            <h2 class="text-xs sm:text-sm font-bold text-stone-900 dark:text-stone-100 leading-snug line-clamp-2">
                                 ${escapeHtml(item.nama)}
                             </h2>
 
@@ -451,8 +451,8 @@ export function initProdukHandler() {
                         </div>
                     </div>
 
-                    <div class="px-3.5 py-3 bg-[#f6f3ec] dark:bg-stone-900/80 border-t border-stone-200 dark:border-stone-800 flex items-center justify-between gap-2">
-                        <div class="text-xs font-extrabold text-stone-900 dark:text-stone-100">
+                    <div class="px-2.5 sm:px-3.5 py-2.5 sm:py-3 bg-[#f6f3ec] dark:bg-stone-900/80 border-t border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div class="text-[11px] sm:text-xs font-extrabold text-stone-900 dark:text-stone-100">
                             ${priceDisplay}
                         </div>
                         <a
@@ -460,7 +460,7 @@ export function initProdukHandler() {
                             target="_blank"
                             rel="noopener noreferrer"
                             data-stop-detail="true"
-                            class="px-3 py-1.5 text-[11px] font-semibold bg-[#5c6d4e] hover:bg-[#4b5a3f] text-white rounded-none transition flex-shrink-0"
+                            class="px-2.5 sm:px-3 py-1.5 text-[10px] sm:text-[11px] font-semibold bg-[#5c6d4e] hover:bg-[#4b5a3f] text-white rounded-none transition text-center flex-shrink-0"
                         >
                             Tanya Produk
                         </a>

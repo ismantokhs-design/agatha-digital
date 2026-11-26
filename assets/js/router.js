@@ -1,6 +1,6 @@
 // File: assets/js/router.js
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getDoc, setDoc, doc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getDoc, setDoc, doc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { auth, db } from "./firebase-init.js";
 import { renderHome, initHomeHandler } from './views/home.js';
 import { renderGaleri, initGaleriHandler } from './views/galeri.js';
@@ -22,8 +22,6 @@ import { renderDatabase, initDatabaseHandler } from './views/database.js';
 import { renderLogin, initLoginHandler } from './views/login.js';
 
 const DEFAULT_USER_ROLE = 'Tamu';
-const NOT_REGISTERED_MESSAGE = "Maaf email anda tidak terdaftar, silahkan hubungi bagian Admin";
-const LOGIN_ERROR_STORAGE_KEY = "agahta_login_error_message";
 
 function ensureGlobalScrollbarHiddenStyle() {
     if (typeof document === "undefined") return;
@@ -72,35 +70,6 @@ function isSafeAvatarSrc(src = "") {
     );
 }
 
-function extractWargaEmail(data = {}) {
-    return String(
-        data.email ||
-        data.alamatEmail ||
-        data.emailWarga ||
-        data.email_warga ||
-        ""
-    ).trim().toLowerCase();
-}
-
-async function isEmailRegisteredInWarga(email = "") {
-    const normalizedEmail = String(email || "").trim().toLowerCase();
-    if (!normalizedEmail) return false;
-
-    try {
-        const wargaCol = collection(db, "warga");
-        const exactSnap = await getDocs(query(wargaCol, where("email", "==", normalizedEmail)));
-        if (!exactSnap.empty) return true;
-
-        const allWargaSnap = await getDocs(wargaCol);
-        return allWargaSnap.docs.some(
-            docSnap => extractWargaEmail(docSnap.data() || {}) === normalizedEmail
-        );
-    } catch (err) {
-        console.warn("Gagal memeriksa koleksi warga di router:", err);
-        return false;
-    }
-}
-
 async function inspectUsersBootstrap(currentUid) {
     try {
         const usersCol = collection(db, "users");
@@ -119,18 +88,6 @@ async function inspectUsersBootstrap(currentUid) {
     } catch (err) {
         console.warn("Gagal memeriksa koleksi users di router:", err);
         return { isFirstLogin: false, hasOtherAdmin: false };
-    }
-}
-
-function showLoginErrorNotice(message = NOT_REGISTERED_MESSAGE) {
-    const cleanMsg = String(message || NOT_REGISTERED_MESSAGE).trim();
-    sessionStorage.setItem(LOGIN_ERROR_STORAGE_KEY, cleanMsg);
-    sessionStorage.setItem("login_error_message", cleanMsg);
-    const errorBox = document.getElementById("error-msg");
-    if (errorBox) {
-        errorBox.textContent = cleanMsg;
-        errorBox.classList.remove("hidden");
-        errorBox.style.display = "block";
     }
 }
 
@@ -522,24 +479,6 @@ export function initRouter() {
             if (currentAuthSeq !== authSeq) return;
 
             const canBootstrapAsAdmin = isFirstLogin || (!hasOtherAdmin && (!existingUserDoc || isExistingAdmin));
-            const isRegisteredWarga = canBootstrapAsAdmin || isExistingAdmin ? true : await isEmailRegisteredInWarga(email);
-            if (currentAuthSeq !== authSeq) return;
-
-            if (!isRegisteredWarga) {
-                runActiveViewCleanup();
-                localStorage.clear();
-                sessionStorage.clear();
-                showLoginErrorNotice(NOT_REGISTERED_MESSAGE);
-                await signOut(auth).catch(() => {});
-                if (currentAuthSeq !== authSeq) return;
-                if (location.hash !== '#/login') {
-                    location.hash = '#/login';
-                } else {
-                    router();
-                }
-                return;
-            }
-
             const assignedRole = canBootstrapAsAdmin
                 ? "Administrator"
                 : (existingUserDoc?.role || DEFAULT_USER_ROLE);

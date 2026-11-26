@@ -1,9 +1,8 @@
 // File: assets/js/views/login.js
-import { GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getDoc, setDoc, doc, updateDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getDoc, setDoc, doc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { auth, db } from "../firebase-init.js";
 
-const NOT_REGISTERED_MESSAGE = "Maaf email anda tidak terdaftar, silahkan hubungi bagian Admin";
 const LOGIN_ERROR_STORAGE_KEY = "rtku_login_error_message";
 const DEFAULT_APP_NAME = "This Application";
 const DEFAULT_APP_ICON = "assets/icons/logo.png";
@@ -56,16 +55,6 @@ function clearErrorMessage(errorBox) {
         targetBox.classList.add("hidden");
         targetBox.style.display = "";
     }
-}
-
-function extractWargaEmail(data = {}) {
-    return String(
-        data.email ||
-        data.alamatEmail ||
-        data.emailWarga ||
-        data.email_warga ||
-        ""
-    ).trim().toLowerCase();
 }
 
 async function fetchProfilPerusahaan() {
@@ -220,32 +209,6 @@ export function renderLogin() {
     `;
 }
 
-async function findWargaByEmail(email) {
-    const normalizedEmail = String(email || "").trim().toLowerCase();
-    if (!normalizedEmail) return null;
-
-    try {
-        const wargaCol = collection(db, "warga");
-        const exactSnap = await getDocs(query(wargaCol, where("email", "==", normalizedEmail)));
-        if (!exactSnap.empty) {
-            const docSnap = exactSnap.docs[0];
-            return { id: docSnap.id, ...docSnap.data() };
-        }
-
-        const allWargaSnap = await getDocs(wargaCol);
-        for (const docSnap of allWargaSnap.docs) {
-            const data = docSnap.data() || {};
-            if (extractWargaEmail(data) === normalizedEmail) {
-                return { id: docSnap.id, ...data };
-            }
-        }
-    } catch (err) {
-        console.warn("Gagal memeriksa koleksi warga:", err);
-    }
-
-    return null;
-}
-
 async function inspectUsersBootstrap(currentUid) {
     try {
         const usersCol = collection(db, "users");
@@ -315,21 +278,6 @@ export function initLoginHandler() {
                 const { isFirstLogin, hasOtherAdmin } = await inspectUsersBootstrap(user.uid);
                 const canBootstrapAsAdmin = isFirstLogin || (!hasOtherAdmin && (!existingUserData || isExistingAdmin));
 
-                const wargaMatch = canBootstrapAsAdmin ? null : await findWargaByEmail(userEmail);
-
-                // Jika bukan login pertama / belum ada Administrator dan email tidak ada di koleksi warga,
-                // jangan tulis/buat dokumen di koleksi users dan langsung logout.
-                if (!canBootstrapAsAdmin && !wargaMatch && !isExistingAdmin) {
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    renderErrorMessage(errorBox, NOT_REGISTERED_MESSAGE);
-                    await signOut(auth).catch(() => {});
-                    requestAnimationFrame(() => {
-                        renderErrorMessage(document.getElementById("error-msg"), NOT_REGISTERED_MESSAGE);
-                    });
-                    return;
-                }
-
                 localStorage.clear();
                 sessionStorage.clear();
 
@@ -339,8 +287,7 @@ export function initLoginHandler() {
 
                 let userData;
                 const currentPhoto = user.photoURL || "";
-                const wargaNama = String(wargaMatch?.nama || wargaMatch?.namaLengkap || "").trim();
-                let currentName = wargaNama || user.displayName || (userEmail ? userEmail.split('@')[0] : assignedRole);
+                let currentName = user.displayName || (userEmail ? userEmail.split('@')[0] : assignedRole);
 
                 if (!existingUserData) {
                     currentName = currentName.charAt(0).toUpperCase() + currentName.slice(1);
@@ -356,7 +303,7 @@ export function initLoginHandler() {
 
                     await setDoc(userDocRef, userData);
                 } else {
-                    const resolvedName = wargaNama || existingUserData.nama || currentName;
+                    const resolvedName = existingUserData.nama || currentName;
 
                     await updateDoc(userDocRef, {
                         email: userEmail,

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agahta-digital-cache-v3';
+const CACHE_NAME = 'agahta-digital-cache-v4';
 const assetsToCache = [
     './index.html',
     './manifest.json',
